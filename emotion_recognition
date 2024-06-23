@@ -1,0 +1,64 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+import wave
+import struct
+
+# Example data loading function
+def load_data():
+    # Normally, you would load your actual dataset here
+    # For this example, we will create dummy data
+    X = np.random.rand(100, 40)  # 100 samples, 40 features each
+    y = np.random.choice(['happy', 'angry', 'sad'], 100)  # 100 labels
+    return X, y
+
+# Example function to extract features from audio files
+def extract_features(filename):
+    # Here you would extract actual features from the audio file
+    # This is a dummy implementation
+    with wave.open(filename, 'rb') as wf:
+        num_frames = wf.getnframes()
+        audio_data = struct.unpack(f'{num_frames}h', wf.readframes(num_frames))
+    features = np.mean(np.array(audio_data).reshape(-1, 40), axis=0)
+    return features
+
+# Load data
+X, y = load_data()
+
+# Encode labels
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+
+# Define and train the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy}")
+
+# Save the model
+import pickle
+with open('emotion_recognition_model.pkl', 'wb') as model_file:
+    pickle.dump(model, model_file)
+
+# Example prediction on a new audio file
+def predict_emotion(filename):
+    features = extract_features(filename)
+    features = features.reshape(1, -1)  # Reshape to match training data format
+    prediction = model.predict(features)
+    emotion = label_encoder.inverse_transform(prediction)
+    return emotion[0]
+
+# Example usage
+example_audio_file = 'path/to/audio/file.wav'
+predicted_emotion = predict_emotion(example_audio_file)
+print(f"Predicted emotion: {predicted_emotion}")
